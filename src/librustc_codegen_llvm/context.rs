@@ -1,4 +1,4 @@
-use crate::abi::FnAbi;
+use crate::abi::{FnAbi, FnAbiLlvmExt};
 use crate::attributes;
 use crate::debuginfo;
 use crate::llvm;
@@ -431,9 +431,8 @@ impl MiscMethods<'tcx> for CodegenCx<'ll, 'tcx> {
         ));
 
         let fn_abi = FnAbi::of_fn_ptr(self, sig, &[]);
-        let llfn = self.declare_fn("rust_eh_unwind_resume", &fn_abi);
-        attributes::apply_target_cpu_attr(self, llfn);
-        let static_ptr = self.static_addr_of(llfn, tcx.data_layout.pointer_align.abi, None);
+        let fn_ptr = fn_abi.ptr_to_llvm_type(self);
+        let static_ptr = self.declare_global("rust_eh_unwind_resume", &fn_ptr);
         unwresume.set(Some(static_ptr));
         static_ptr
     }
